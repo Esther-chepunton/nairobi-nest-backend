@@ -1,21 +1,30 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
-
-from app.ai_recommendations import ai_recommendations  # adjust to your actual blueprint import
+from app.ai_recommendations import ai_recommendations
 from app.routes.mpesa_payment import mpesa_router
-
 
 app = Flask(__name__)
 
-# ✅ Enable CORS for all routes
-CORS(app)
+# Configure CORS
+CORS(app, resources={
+    r"/api/*": {
+        "origins": [
+            "https://nairobi-nest.vercel.app/",  # Your hosted frontend
+            "http://localhost:5173"           # Local development
+        ],
+        "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
 
-# or be more strict with just localhost:5173:
-# CORS(app, origins=["http://localhost:5173"])
+# Add health check endpoint
+@app.route('/')
+def health_check():
+    return jsonify({"status": "healthy", "message": "Nairobi Nest Backend"})
 
-# ✅ Register your blueprints
+# Register blueprints
 app.register_blueprint(ai_recommendations, url_prefix="/api")
 app.register_blueprint(mpesa_router, url_prefix="/api")
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=10000)
